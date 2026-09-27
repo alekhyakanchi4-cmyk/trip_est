@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Indian Trip Cost Estimator & Visualizer</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .layout {
+            display: flex;
+            gap: 20px;
+            max-width: 1100px;
+            margin: auto;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            flex: 1;
+            min-width: 320px;
+        }
+
+        h2 {
+            color: #333;
+            margin-top: 0;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 15px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .summary-badge {
+            background: #e7f5ff;
+            border-left: 4px solid #1c7ed6;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .summary-badge h3 {
+            margin: 0 0 8px 0;
+            color: #1c7ed6;
+        }
+
+        .summary-badge p {
+            margin: 0;
+            color: #333;
+        }
+
+        .charts-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .chart-box {
+            margin-bottom: 30px;
+        }
+
+        .chart-box h4 {
+            color: #444;
+            margin-bottom: 10px;
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
+        .error-message {
+            display: none;
+            background: #ffe3e3;
+            color: #c92a2a;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 15px;
+            }
+
+            .card {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layout">
+
+    <!-- INPUT CARD -->
+    <div class="card">
+
+        <h2>Trip Parameter Inputs</h2>
+
+        <div id="errorMessage" class="error-message"></div>
+
+        <form id="tripForm">
+
+            <div class="form-group">
+                <label for="distance_km">One-way Distance (km)</label>
+                <input
+                    type="number"
+                    id="distance_km"
+                    value="350"
+                    min="1"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="persons">Number of Persons</label>
+                <input
+                    type="number"
+                    id="persons"
+                    value="4"
+                    min="1"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="days">Number of Days</label>
+                <input
+                    type="number"
+                    id="days"
+                    value="3"
+                    min="1"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="vehicle_type">Vehicle Type</label>
+
+                <select id="vehicle_type">
+
+                    <option value="bike">
+                        Motorbike (40 km/l)
+                    </option>
+
+                    <option value="hatchback" selected>
+                        Hatchback Car (18 km/l)
+                    </option>
+
+                    <option value="sedan">
+                        Sedan Car (14 km/l)
+                    </option>
+
+                    <option value="suv">
+                        SUV Car (10 km/l)
+                    </option>
+
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="fuel_price">
+                    Fuel Price (₹ / liter)
+                </label>
+
+                <input
+                    type="number"
+                    id="fuel_price"
+                    value="102"
+                    min="1"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="stay_cost_per_day">
+                    Stay Rate per Room/Night (₹)
+                </label>
+
+                <input
+                    type="number"
+                    id="stay_cost_per_day"
+                    value="2500"
+                    min="0"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="food_cost_per_day">
+                    Food Budget per Person/Day (₹)
+                </label>
+
+                <input
+                    type="number"
+                    id="food_cost_per_day"
+                    value="600"
+                    min="0"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="misc_cost">
+                    Tolls & Misc Expenses (₹)
+                </label>
+
+                <input
+                    type="number"
+                    id="misc_cost"
+                    value="1200"
+                    min="0"
+                    required
+                >
+            </div>
+
+            <button type="submit">
+                Calculate & Generate Charts
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <!-- ANALYSIS CARD -->
+    <div class="card">
+
+        <h2>Trip Analysis</h2>
+
+        <div
+            id="summary"
+            class="summary-badge"
+            style="display:none;"
+        >
+
+            <h3>
+                Total Expense:
+                <span id="totalVal">₹0</span>
+            </h3>
+
+            <p>
+                Cost Per Person:
+                <strong id="perPersonVal">₹0</strong>
+            </p>
+
+        </div>
+
+
+        <!-- CHARTS -->
+        <div id="chartsContainer" class="charts-container">
+
+            <div class="chart-box">
+
+                <h4>
+                    Expense Distribution (Doughnut Chart)
+                </h4>
+
+                <canvas id="pieChart"></canvas>
+
+            </div>
+
+
+            <div class="chart-box">
+
+                <h4>
+                    Expense Breakdown (Bar Chart)
+                </h4>
+
+                <canvas id="barChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    let pieInstance = null;
+    let barInstance = null;
+
+
+    document
+        .getElementById("tripForm")
+        .addEventListener("submit", async function (e) {
+
+            e.preventDefault();
+
+            const errorMessage =
+                document.getElementById("errorMessage");
+
+            errorMessage.style.display = "none";
+            errorMessage.innerText = "";
+
+
+            // Collect form data
+            const payload = {
+
+                distance_km:
+                    Number(document.getElementById("distance_km").value),
+
+                persons:
+                    Number(document.getElementById("persons").value),
+
+                days:
+                    Number(document.getElementById("days").value),
+
+                vehicle_type:
+                    document.getElementById("vehicle_type").value,
+
+                fuel_price:
+                    Number(document.getElementById("fuel_price").value),
+
+                stay_cost_per_day:
+                    Number(document.getElementById("stay_cost_per_day").value),
+
+                food_cost_per_day:
+                    Number(document.getElementById("food_cost_per_day").value),
+
+                misc_cost:
+                    Number(document.getElementById("misc_cost").value)
+            };
+
+
+            // Basic validation
+            if (
+                payload.distance_km <= 0 ||
+                payload.persons <= 0 ||
+                payload.days <= 0 ||
+                payload.fuel_price <= 0 ||
+                payload.stay_cost_per_day < 0 ||
+                payload.food_cost_per_day < 0 ||
+                payload.misc_cost < 0
+            ) {
+
+                errorMessage.innerText =
+                    "Please enter valid positive values.";
+
+                errorMessage.style.display = "block";
+
+                return;
+            }
+
+
+            try {
+
+                // Send data to Flask backend
+                const response = await fetch(
+                    "/api/calculate-trip",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify(payload)
+                    }
+                );
+
+
+                const data = await response.json();
+
+
+                // Handle backend error
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.error ||
+                        "Unable to calculate trip cost."
+                    );
+                }
+
+
+                // Display total expense
+                document.getElementById("totalVal").innerText =
+                    "₹" +
+                    Number(data.grand_total)
+                        .toLocaleString("en-IN");
+
+
+                // Display cost per person
+                document.getElementById("perPersonVal").innerText =
+                    "₹" +
+                    Number(data.per_person_cost)
+                        .toLocaleString("en-IN");
+
+
+                // Show results
+                document.getElementById("summary")
+                    .style.display = "block";
+
+                document.getElementById("chartsContainer")
+                    .style.display = "block";
+
+
+                // Get chart data
+                const labels =
+                    Object.keys(data.breakdown);
+
+                const values =
+                    Object.values(data.breakdown)
+                        .map(Number);
+
+
+                // Destroy previous charts
+                if (pieInstance) {
+                    pieInstance.destroy();
+                }
+
+                if (barInstance) {
+                    barInstance.destroy();
+                }
+
+
+                // Doughnut Chart
+                const pieCanvas =
+                    document
+                        .getElementById("pieChart")
+                        .getContext("2d");
+
+
+                pieInstance = new Chart(
+                    pieCanvas,
+                    {
+                        type: "doughnut",
+
+                        data: {
+                            labels: labels,
+
+                            datasets: [{
+                                data: values,
+
+                                backgroundColor: [
+                                    "#0088FE",
+                                    "#00C49F",
+                                    "#FFBB28",
+                                    "#FF8042"
+                                ]
+                            }]
+                        },
+
+                        options: {
+                            responsive: true,
+
+                            plugins: {
+                                legend: {
+                                    position: "bottom"
+                                }
+                            }
+                        }
+                    }
+                );
+
+
+                // Bar Chart
+                const barCanvas =
+                    document
+                        .getElementById("barChart")
+                        .getContext("2d");
+
+
+                barInstance = new Chart(
+                    barCanvas,
+                    {
+                        type: "bar",
+
+                        data: {
+
+                            labels: labels,
+
+                            datasets: [{
+                                label: "Expense in ₹",
+
+                                data: values,
+
+                                backgroundColor: "#36A2EB"
+                            }]
+                        },
+
+                        options: {
+
+                            responsive: true,
+
+                            scales: {
+
+                                y: {
+                                    beginAtZero: true,
+
+                                    ticks: {
+                                        callback: function(value) {
+                                            return "₹" +
+                                                value.toLocaleString("en-IN");
+                                        }
+                                    }
+                                }
+
+                            }
+
+                        }
+                    }
+                );
+
+            }
+
+            catch (error) {
+
+                errorMessage.innerText =
+                    error.message ||
+                    "Something went wrong. Please try again.";
+
+                errorMessage.style.display = "block";
+
+                console.error(error);
+            }
+
+        });
+
+</script>
+
+</body>
+</html>
